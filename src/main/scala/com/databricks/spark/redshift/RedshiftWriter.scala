@@ -223,6 +223,7 @@ private[redshift] class RedshiftWriter(
     // However, each task gets its own deserialized copy, making this safe.
     val conversionFunctions: Array[Any => Any] = data.schema.fields.map { field =>
       field.dataType match {
+        case _: DecimalType => (v: Any) => if (v == null) null else v.toString
         case DateType =>
           val dateFormat = Conversions.createRedshiftDateFormat()
           (v: Any) => {
@@ -271,6 +272,8 @@ private[redshift] class RedshiftWriter(
     // strings. This is necessary for Redshift to be able to load these columns (see #39).
     val convertedSchema: StructType = StructType(
       schemaWithLowercaseColumnNames.map {
+        case StructField(name, _: DecimalType, nullable, meta) =>
+          StructField(name, StringType, nullable, meta)
         case StructField(name, DateType, nullable, meta) =>
           StructField(name, StringType, nullable, meta)
         case StructField(name, TimestampType, nullable, meta) =>

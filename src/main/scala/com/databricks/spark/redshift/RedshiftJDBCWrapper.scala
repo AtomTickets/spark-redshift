@@ -177,7 +177,12 @@ private[redshift] class JDBCWrapper {
         val fieldSize = rsmd.getPrecision(i + 1)
         val fieldScale = rsmd.getScale(i + 1)
         val isSigned = rsmd.isSigned(i + 1)
-        val nullable = rsmd.isNullable(i + 1) != ResultSetMetaData.columnNoNulls
+        // TODO: this doesn't appear to be reliable as a SELECT * LIMIT 1 is used to infer schema,
+        // and there may be columns that have a mix of NULL/NOT NULL values, in which case a NOT
+        // NULL may be inferred from the single row and cause the query to fail when querying
+        // multiple rows.
+        // val nullable = rsmd.isNullable(i + 1) != ResultSetMetaData.columnNoNulls
+        val nullable = true
         val columnType = getCatalystType(dataType, fieldSize, fieldScale, isSigned)
         fields(i) = StructField(columnName, columnType, nullable)
         i = i + 1

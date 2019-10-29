@@ -144,6 +144,9 @@ private[redshift] case class RedshiftRelation(
           Utils.fixS3Url(Utils.removeCredentialsFromURI(URI.create(tempDir)).toString)
         val s3URI = Utils.createS3URI(cleanedTempDirUri)
         val s3Client = s3ClientFactory(creds)
+        log.info(
+          s"Fetching manifest from bucket: ${s3URI.getBucket}, key: ${s3URI.getKey + "manifest"}")
+          
         val is = s3Client.getObject(s3URI.getBucket, s3URI.getKey + "manifest").getObjectContent
         val s3Files = try {
           val entries = Json.parse(new InputStreamReader(is)).asObject().get("entries").asArray()

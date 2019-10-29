@@ -3,8 +3,26 @@
 [![Build Status](https://travis-ci.org/databricks/spark-redshift.svg?branch=master)](https://travis-ci.org/databricks/spark-redshift)
 [![codecov.io](http://codecov.io/github/databricks/spark-redshift/coverage.svg?branch=master)](http://codecov.io/github/databricks/spark-redshift?branch=master)
 
-## Disclaimer
-This is fork version from Databricks's spark-redshift repository. Our custom changes only tested with Spark **2.4.0** version. These custom changes may not be worked with older version of Spark
+## Atom Tickets Notes
+
+This is a fork of Databricks's spark-redshift repository (see Github Network graph). Our changes have only been tested with Spark **2.4.0** version. These custom changes may not be worked with older version of Spark.  
+
+Here are the patches we've applied:
+* Update to Spark 2.4.0
+* Force all columns to be `nullable` when inferring schemas.  This library uses `SELECT * FROM <table> LIMIT 1` to infer the schema which could have non-null values in that single row that may be null in other rows.  Perhaps a more robust method would be to introspect the metadata using JDBC?
+
+**Making changes:**
+
+The release settings are still configured for Databricks, so for custom releases, we just build the jar file and import it manually into our projects.
+
+* If you want to change the artifact version, modify `version.sbt`
+* Run `sbt package` to build the library.  Artifact will be created as `/target/scala-2.11/spark-redshift_2.11-<version>.jar`
+* You can import that library into your project, or manually publish it to your repo.  (eg: [maven-install-plugin](https://maven.apache.org/plugins/maven-install-plugin/))
+ 
+## Project Import into IntelliJ
+
+I've had issues with IntelliJ importing the project using the default `Open...` menu from IntelliJ.  This project uses the older SBT 'object SparkRedshiftBuild extends Build` rather than pure `build.sbt`.  
+Instead, try running `sbt gen-idea` to generate Idea project files. 
 
 ## Note
 

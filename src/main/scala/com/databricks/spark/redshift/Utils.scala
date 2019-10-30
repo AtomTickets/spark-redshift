@@ -18,15 +18,15 @@ package com.databricks.spark.redshift
 
 import java.net.URI
 import java.util.UUID
-
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
-
-import com.amazonaws.services.s3.{AmazonS3URI, AmazonS3Client}
+import com.amazonaws.services.s3.{AmazonS3Client, AmazonS3URI}
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.slf4j.LoggerFactory
+
+import scala.util.{Failure, Success, Try}
 
 /**
  * Various arbitrary helper functions
@@ -57,6 +57,22 @@ private[redshift] object Utils {
    */
   def fixS3Url(url: String): String = {
     url.replaceAll("s3[an]://", "s3://")
+  }
+
+  def withRetries[T](failureMesage: Throwable => String, retries: Int = 1, delay: Long = 2000)(f: => T): T = {
+
+    Try(f) match {
+      case Success(v) => v
+      case Failure(ex) =>
+        if (retries > 0) {
+          log.warn(s"${failureMesage(ex)} ($retries retries left, will retry after ${delay}ms)")
+          Thread.sleep(delay)
+          withRetries[T](failureMesage, retries - 1, delay)(f)
+        } else {
+          log.warn(s"${failureMesage(ex)} ($retries retries left), will throw the exception")
+          throw ex
+        }
+    }
   }
 
   /**

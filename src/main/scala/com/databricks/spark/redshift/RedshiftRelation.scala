@@ -18,7 +18,6 @@ package com.databricks.spark.redshift
 
 import java.io.InputStreamReader
 import java.net.URI
-
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 
 import scala.collection.JavaConverters._
@@ -144,10 +143,14 @@ private[redshift] case class RedshiftRelation(
           Utils.fixS3Url(Utils.removeCredentialsFromURI(URI.create(tempDir)).toString)
         val s3URI = Utils.createS3URI(cleanedTempDirUri)
         val s3Client = s3ClientFactory(creds)
-        log.info(
-          s"Fetching manifest from bucket: ${s3URI.getBucket}, key: ${s3URI.getKey + "manifest"}")
-          
-        val is = s3Client.getObject(s3URI.getBucket, s3URI.getKey + "manifest").getObjectContent
+
+        log.info(s"Fetching manifest from: ${s3URI.toString + "manifest"}")
+
+        // fetch the manifest using retry+delay logic, since S3 is eventually consistent
+        val is = Utils.withRetries(ex => s"failed to fetch manifest: ${ex.getMessage}", retries = 10, delay = 1000) {
+          s3Client.getObject(s3URI.getBucket, s3URI.getKey + "manifest").getObjectContent
+        }
+
         val s3Files = try {
           val entries = Json.parse(new InputStreamReader(is)).asObject().get("entries").asArray()
           entries.iterator().asScala.map(_.asObject().get("url").asString()).toSeq

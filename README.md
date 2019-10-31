@@ -10,7 +10,7 @@ This is a fork of Databricks's spark-redshift repository (see Github Network gra
 Here are the patches we've applied:
 * Update to Spark 2.4.0
 * Force all columns to be `nullable` when inferring schemas.  This library uses `SELECT * FROM <table> LIMIT 1` to infer the schema which could have non-null values in that single row that may be null in other rows.  Perhaps a more robust method would be to introspect the metadata using JDBC?
-* Retry logic for reading and UNLOAD `manifest`
+* Retry logic for reading UNLOAD `manifest`
 
 **Releasing**
 
